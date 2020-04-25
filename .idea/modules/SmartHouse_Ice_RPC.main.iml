@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module external.linked.project.id="SmartHouse_Ice_RPC:main" external.linked.project.path="$MODULE_DIR$/../.." external.root.project.path="$MODULE_DIR$/../.." external.system.id="GRADLE" external.system.module.group="com.olliekrk" external.system.module.type="sourceSet" external.system.module.version="0.1" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <output url="file://$MODULE_DIR$/../../build/classes/java/main" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../../build/generated-src">
+      <sourceFolder url="file://$MODULE_DIR$/../../build/generated-src" isTestSource="false" />
+    </content>
+    <content url="file://$MODULE_DIR$/../../build/generated/sources/annotationProcessor/java/main">
+      <sourceFolder url="file://$MODULE_DIR$/../../build/generated/sources/annotationProcessor/java/main" isTestSource="false" generated="true" />
+    </content>
+    <content url="file://$MODULE_DIR$/../../src/main">
+      <sourceFolder url="file://$MODULE_DIR$/../../src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../src/main/resources" type="java-resource" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Gradle: ch.qos.logback:logback-classic:1.2.3" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.javafaker:javafaker:1.0.2" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Gradle: org.projectlombok:lombok:1.18.10" level="project" />
+    <orderEntry type="library" name="Gradle: io.reactivex.rxjava2:rxjava:2.2.19" level="project" />
+    <orderEntry type="library" name="Gradle: com.zeroc:ice:3.7.2" level="project" />
+    <orderEntry type="library" name="Gradle: ch.qos.logback:logback-core:1.2.3" level="project" />
+    <orderEntry type="library" name="Gradle: org.slf4j:slf4j-api:1.7.25" level="project" />
+    <orderEntry type="library" name="Gradle: org.apache.commons:commons-lang3:3.5" level="project" />
+    <orderEntry type="library" name="Gradle: org.yaml:snakeyaml:android:1.23" level="project" />
+    <orderEntry type="library" name="Gradle: com.github.mifmif:generex:1.0.2" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Gradle: org.projectlombok:lombok:1.18.12" level="project" />
+    <orderEntry type="library" name="Gradle: org.reactivestreams:reactive-streams:1.0.3" level="project" />
+    <orderEntry type="library" name="Gradle: dk.brics.automaton:automaton:1.11-8" level="project" />
+  </component>
+</module>

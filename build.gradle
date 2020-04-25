@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'com.zeroc.gradle.ice-builder.slice' version '1.4.7'
+    id "io.freefair.lombok" version "5.0.0"
+}
+
+group 'com.olliekrk'
+version '0.1'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.projectlombok:lombok:1.18.10'
+    compile 'ch.qos.logback:logback-classic:1.2.3'
+    compile 'com.github.javafaker:javafaker:1.0.2'
+    compile 'io.reactivex.rxjava2:rxjava:2.2.19'
+
+    implementation 'com.zeroc:ice:3.7.2'
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+slice {
+    java {
+        files = [file("src/main/slice/SmartDevices.ice")]
+    }
+}

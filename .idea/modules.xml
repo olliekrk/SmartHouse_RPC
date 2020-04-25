@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/SmartHouse_Ice_RPC.iml" filepath="$PROJECT_DIR$/.idea/modules/SmartHouse_Ice_RPC.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/SmartHouse_Ice_RPC.main.iml" filepath="$PROJECT_DIR$/.idea/modules/SmartHouse_Ice_RPC.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/SmartHouse_Ice_RPC.test.iml" filepath="$PROJECT_DIR$/.idea/modules/SmartHouse_Ice_RPC.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/py-client/py-client.iml" filepath="$PROJECT_DIR$/py-client/py-client.iml" />
+    </modules>
+  </component>
+</project>

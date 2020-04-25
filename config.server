@@ -1,0 +1,10 @@
+# Adapter endpoints configuration
+
+HouseAdapter.Endpoints=tcp -h localhost -p 10000
+HouseAdapter.ThreadPool.Size=10
+
+
+# Network Tracing
+
+Ice.Warn.Connections=1
+Ice.Trace.Network=3
