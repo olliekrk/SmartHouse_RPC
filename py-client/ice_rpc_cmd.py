@@ -1,10 +1,10 @@
-import argparse
 import sys
 from enum import Enum
 
 import cmd2
 
 import Home
+import ice_parsers
 
 INTRO = 'Smart Home RPC remote controller\nv0.1 2020\n'
 PROMPT = 'Home> '
@@ -16,86 +16,6 @@ class DeviceCategory(Enum):
     drone_camera = 3
     grass_mower = 4
     fridge = 5
-
-
-def device_name_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-n', '--name', required=True, action='store', help='Name of the device to access')
-    return parser
-
-
-def device_with_args_parser_base():
-    parser = device_name_parser()
-    actions_group = parser.add_argument_group('actions')
-    arguments = parser.add_argument_group('arguments')
-    exclusive_actions = actions_group.add_mutually_exclusive_group()
-    exclusive_actions.required = True
-    return parser, exclusive_actions, arguments
-
-
-def coordinates_parser_base():
-    parser, exclusive_actions, arguments = device_with_args_parser_base()
-    exclusive_actions.add_argument('-get_coords', action='store_true', help='Get coordinates of this device')
-    exclusive_actions.add_argument('-set_coords', action='store_true', help='Set coordinates of this device')
-    arguments.add_argument('-x', action='store', type=float, help='The X coordinate of this device GPS system')
-    arguments.add_argument('-y', action='store', type=float, help='The Y coordinate of this device GPS system')
-    return parser, exclusive_actions, arguments
-
-
-def camera_parser_base():
-    parser, exclusive_actions, arguments = coordinates_parser_base()
-    exclusive_actions.add_argument('-get_zoom', action='store_true', help='Get the current zoom of this camera')
-    exclusive_actions.add_argument('-zoom_in', action='store', type=int, help='Zoom IN the camera lens.')
-    exclusive_actions.add_argument('-zoom_out', action='store', type=int, help='Zoom OUT the camera lens.')
-    exclusive_actions.add_argument('-get_direction', action='store_true', help='Get the direction the camera is facing')
-    exclusive_actions.add_argument('-set_direction', action='store', help='Change the direction the camera is facing',
-                                   choices=[Home.Direction.North.name,
-                                            Home.Direction.East.name,
-                                            Home.Direction.West.name,
-                                            Home.Direction.South.name])
-    return parser, exclusive_actions, arguments
-
-
-def grass_mower_parser():
-    parser, exclusive_actions, arguments = coordinates_parser_base()
-    exclusive_actions.add_argument('-on', action='store_true', help='Turn the engine ON')
-    exclusive_actions.add_argument('-off', action='store_true', help='Turn the engine OFF')
-    return parser
-
-
-def wall_camera_parser():
-    parser, exclusive_actions, arguments = camera_parser_base()
-    exclusive_actions.add_argument('-is_visible', action='store_true', help='Check if camera is in visible mode')
-    exclusive_actions.add_argument('-visible', action='store_true', help='Set the camera to be visible')
-    exclusive_actions.add_argument('-invisible', action='store_false', help='Hide this camera')
-    return parser
-
-
-def drone_camera_parser():
-    parser, exclusive_actions, arguments = camera_parser_base()
-    exclusive_actions.add_argument('-get_altitude', action='store_true', help='Get drone altitude')
-    exclusive_actions.add_argument('-set_altitude', action='store', type=float, help='Set drone altitude')
-    return parser
-
-
-def fridge_parser():
-    parser, exclusive_actions, arguments = device_with_args_parser_base()
-    exclusive_actions.add_argument('-get_temperature', action='store_true',
-                                   help='Get current temperature')
-    exclusive_actions.add_argument('-get_items', action='store_true',
-                                   help='Check what items are currently in the fridge')
-    exclusive_actions.add_argument('-put_items', action='store_true',
-                                   help='Remotely order & put given number of items in the fridge')
-    exclusive_actions.add_argument('-remove_items', action='store_true',
-                                   help='Remotely remove given number of items from the fridge')
-    exclusive_actions.add_argument('-eco_mode', '--set_eco_mode', action='store', type=bool,
-                                   help='Enable or disable the eco mode of this fridge')
-    exclusive_actions.add_argument('-motd', '--message_of_the_day', action='store_true',
-                                   help='Get the Message Of The Day, and check ECO-MODE settings')
-    arguments.add_argument('-t', '--temperature-value', action='store', type=float, help='Temperature value')
-    arguments.add_argument('-u', '--temperature-unit', action='store', help='Temperature unit',
-                           choices=[Home.TemperatureUnit.Celsius.name, Home.TemperatureUnit.Fahrenheit.name])
-    return parser
 
 
 class RpcController:
@@ -141,17 +61,19 @@ class DeviceCmd(cmd2.Cmd):
     def cmdloop(self, intro=INTRO):
         return cmd2.Cmd.cmdloop(self, intro)
 
-    @cmd2.with_argparser(device_name_parser())
+    @cmd2.with_argparser(ice_parsers.device_name_parser())
     def do_list_devices(self, args):
         """List all currently available and instantiated devices."""
         proxy = self.controller.access_object(args.name, DeviceCategory.home)
         print(proxy.getActiveDevices())
 
-    @cmd2.with_argparser(grass_mower_parser())
+    @cmd2.with_argparser(ice_parsers.grass_mower_parser())
     def do_grass_mower(self, args):
         """Control the grass mowers"""
         proxy = self.controller.access_object(args.name, DeviceCategory.grass_mower)
-        if args.set_coords:
+        if args.get_coords:
+            print(proxy.getCoordinates())
+        elif args.set_coords:
             if args.x is not None and args.y is not None:
                 try:
                     proxy.setCoordinates(Home.Garden.Coordinates(args.x, args.y))
@@ -159,29 +81,103 @@ class DeviceCmd(cmd2.Cmd):
                     print('Unable to proceed!: ', str(e))
             else:
                 print('Coordinates were not provided')
-        elif args.get_coords:
-            print(proxy.getCoordinates())
         elif args.on:
             proxy.turnSwitch(True)
         elif args.off:
             proxy.turnSwitch(False)
 
-    @cmd2.with_argparser(wall_camera_parser())
+    @cmd2.with_argparser(ice_parsers.wall_camera_parser())
     def do_wall_camera(self, args):
         """Control the wall cameras"""
-        pass
+        proxy = self.controller.access_object(args.name, DeviceCategory.wall_camera)
+        if args.is_visible:
+            print(proxy.isVisible())
+        elif args.visible:
+            print(proxy.setVisibility(True))
+        elif args.invisible:
+            print(proxy.setVisibility(False))
+        else:
+            self.__dispatch_camera(args, proxy)
 
-    @cmd2.with_argparser(drone_camera_parser())
+    @cmd2.with_argparser(ice_parsers.drone_camera_parser())
     def do_drone_camera(self, args):
         """Control the flying drone cameras"""
-        pass
+        proxy = self.controller.access_object(args.name, DeviceCategory.drone_camera)
+        if args.get_altitude:
+            print(proxy.getAltitude())
+        elif args.set_altitude is not None:
+            try:
+                proxy.setAltitude(args.set_altitude)
+            except Home.HomeException as e:
+                print('Unable to proceed!: ', str(e))
+        else:
+            self.__dispatch_camera(args, proxy)
 
-    @cmd2.with_argparser(fridge_parser())
+    @cmd2.with_argparser(ice_parsers.fridge_parser())
     def do_fridge(self, args):
         """Control the smart fridge"""
-        pass
+        proxy = self.controller.access_object(args.name, DeviceCategory.fridge)
+        if args.message_of_the_day:
+            print(proxy.getMessageOfTheDay())
+        elif args.get_temperature:
+            print(proxy.getTemperature())
+        elif args.get_items:
+            print(proxy.getItems())
+        elif args.eco_on:
+            proxy.setEcoMode(True)
+        elif args.eco_off:
+            proxy.setEcoMode(False)
+        elif args.set_temperature:
+            value = args.temperature_value
+            unit = args.temperature_unit
+            if value is not None and unit is not None:
+                try:
+                    proxy.setTemperature(Home.Kitchen.Temperature(Home.TemperatureUnit[unit], value))
+                except Home.HomeException as e:
+                    print("Unable to proceed!: ", str(e))
+            else:
+                print("Temperature unit and value parameters must be provided")
+        elif args.put_items:
+            if args.quantity is not None and args.item_name is not None:
+                try:
+                    proxy.putItems(Home.Kitchen.Item(args.item_name, args.quantity))
+                except Home.HomeException as e:
+                    print("Unable to proceed!: ", str(e))
+            else:
+                print("Item name and quantity parameters must be provided")
+        elif args.remove_items:
+            if args.quantity is not None and args.item_name is not None:
+                try:
+                    proxy.removeItems(Home.Kitchen.Item(args.item_name, args.quantity))
+                except Home.HomeException as e:
+                    print("Unable to proceed!: ", str(e))
+            else:
+                print("Item name and quantity parameters must be provided")
 
     @staticmethod
-    def do_exit(args):
+    def __dispatch_camera(args, proxy):
+        if args.get_zoom:
+            print(proxy.getZoom())
+        elif args.zoom_in is not None:
+            proxy.zoomIn(args.zoom_in)
+        elif args.zoom_out is not None:
+            proxy.zoomOut(args.zoom_in)
+        elif args.get_direction:
+            print(proxy.getDirection())
+        elif args.set_direction is not None:
+            proxy.setDirection(Home.Direction[args.set_direction])
+        elif args.get_coords:
+            print(proxy.getCoordinates())
+        elif args.set_coords:
+            if args.x is not None and args.y is not None:
+                try:
+                    proxy.setCoordinates(Home.Garden.Coordinates(args.x, args.y))
+                except Home.HomeException as e:
+                    print('Unable to proceed!: ', str(e))
+            else:
+                print('Coordinates were not provided')
+
+    @staticmethod
+    def do_exit(_args):
         """Exit the program"""
         sys.exit(0)
