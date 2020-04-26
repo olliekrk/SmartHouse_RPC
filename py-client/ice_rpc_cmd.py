@@ -1,7 +1,9 @@
-from enum import Enum
-import sys
 import argparse
+import sys
+from enum import Enum
+
 import cmd2
+
 import Home
 
 INTRO = 'Smart Home RPC remote controller\nv0.1 2020\n'
@@ -22,18 +24,77 @@ def device_name_parser():
     return parser
 
 
-def grass_mower_parser():
+def device_with_args_parser_base():
     parser = device_name_parser()
     actions_group = parser.add_argument_group('actions')
-    exclusive_actions_group = actions_group.add_mutually_exclusive_group()
-    exclusive_actions_group.required = True
-    exclusive_actions_group.add_argument('-get_coords', action='store_true', help='Get coordinates of this device')
-    exclusive_actions_group.add_argument('-set_coords', action='store_true', help='Set coordinates of this device')
-    exclusive_actions_group.add_argument('-on', action='store_true', help='Turn the engine ON')
-    exclusive_actions_group.add_argument('-off', action='store_true', help='Turn the engine OFF')
-    arguments_group = parser.add_argument_group('arguments')
-    arguments_group.add_argument('-x', action='store', type=float, help='The X coordinate of the grass mower')
-    arguments_group.add_argument('-y', action='store', type=float, help='The Y coordinate of the grass mower')
+    arguments = parser.add_argument_group('arguments')
+    exclusive_actions = actions_group.add_mutually_exclusive_group()
+    exclusive_actions.required = True
+    return parser, exclusive_actions, arguments
+
+
+def coordinates_parser_base():
+    parser, exclusive_actions, arguments = device_with_args_parser_base()
+    exclusive_actions.add_argument('-get_coords', action='store_true', help='Get coordinates of this device')
+    exclusive_actions.add_argument('-set_coords', action='store_true', help='Set coordinates of this device')
+    arguments.add_argument('-x', action='store', type=float, help='The X coordinate of this device GPS system')
+    arguments.add_argument('-y', action='store', type=float, help='The Y coordinate of this device GPS system')
+    return parser, exclusive_actions, arguments
+
+
+def camera_parser_base():
+    parser, exclusive_actions, arguments = coordinates_parser_base()
+    exclusive_actions.add_argument('-get_zoom', action='store_true', help='Get the current zoom of this camera')
+    exclusive_actions.add_argument('-zoom_in', action='store', type=int, help='Zoom IN the camera lens.')
+    exclusive_actions.add_argument('-zoom_out', action='store', type=int, help='Zoom OUT the camera lens.')
+    exclusive_actions.add_argument('-get_direction', action='store_true', help='Get the direction the camera is facing')
+    exclusive_actions.add_argument('-set_direction', action='store', help='Change the direction the camera is facing',
+                                   choices=[Home.Direction.North.name,
+                                            Home.Direction.East.name,
+                                            Home.Direction.West.name,
+                                            Home.Direction.South.name])
+    return parser, exclusive_actions, arguments
+
+
+def grass_mower_parser():
+    parser, exclusive_actions, arguments = coordinates_parser_base()
+    exclusive_actions.add_argument('-on', action='store_true', help='Turn the engine ON')
+    exclusive_actions.add_argument('-off', action='store_true', help='Turn the engine OFF')
+    return parser
+
+
+def wall_camera_parser():
+    parser, exclusive_actions, arguments = camera_parser_base()
+    exclusive_actions.add_argument('-is_visible', action='store_true', help='Check if camera is in visible mode')
+    exclusive_actions.add_argument('-visible', action='store_true', help='Set the camera to be visible')
+    exclusive_actions.add_argument('-invisible', action='store_false', help='Hide this camera')
+    return parser
+
+
+def drone_camera_parser():
+    parser, exclusive_actions, arguments = camera_parser_base()
+    exclusive_actions.add_argument('-get_altitude', action='store_true', help='Get drone altitude')
+    exclusive_actions.add_argument('-set_altitude', action='store', type=float, help='Set drone altitude')
+    return parser
+
+
+def fridge_parser():
+    parser, exclusive_actions, arguments = device_with_args_parser_base()
+    exclusive_actions.add_argument('-get_temperature', action='store_true',
+                                   help='Get current temperature')
+    exclusive_actions.add_argument('-get_items', action='store_true',
+                                   help='Check what items are currently in the fridge')
+    exclusive_actions.add_argument('-put_items', action='store_true',
+                                   help='Remotely order & put given number of items in the fridge')
+    exclusive_actions.add_argument('-remove_items', action='store_true',
+                                   help='Remotely remove given number of items from the fridge')
+    exclusive_actions.add_argument('-eco_mode', '--set_eco_mode', action='store', type=bool,
+                                   help='Enable or disable the eco mode of this fridge')
+    exclusive_actions.add_argument('-motd', '--message_of_the_day', action='store_true',
+                                   help='Get the Message Of The Day, and check ECO-MODE settings')
+    arguments.add_argument('-t', '--temperature-value', action='store', type=float, help='Temperature value')
+    arguments.add_argument('-u', '--temperature-unit', action='store', help='Temperature unit',
+                           choices=[Home.TemperatureUnit.Celsius.name, Home.TemperatureUnit.Fahrenheit.name])
     return parser
 
 
@@ -88,14 +149,14 @@ class DeviceCmd(cmd2.Cmd):
 
     @cmd2.with_argparser(grass_mower_parser())
     def do_grass_mower(self, args):
-        """Control the grass mower"""
+        """Control the grass mowers"""
         proxy = self.controller.access_object(args.name, DeviceCategory.grass_mower)
         if args.set_coords:
             if args.x is not None and args.y is not None:
                 try:
                     proxy.setCoordinates(Home.Garden.Coordinates(args.x, args.y))
-                except Home.InvalidCoordinates as e:
-                    print('InvalidCoordinates!: ', str(e))
+                except Home.HomeException as e:
+                    print('Unable to proceed!: ', str(e))
             else:
                 print('Coordinates were not provided')
         elif args.get_coords:
@@ -105,16 +166,22 @@ class DeviceCmd(cmd2.Cmd):
         elif args.off:
             proxy.turnSwitch(False)
 
+    @cmd2.with_argparser(wall_camera_parser())
+    def do_wall_camera(self, args):
+        """Control the wall cameras"""
+        pass
 
+    @cmd2.with_argparser(drone_camera_parser())
+    def do_drone_camera(self, args):
+        """Control the flying drone cameras"""
+        pass
+
+    @cmd2.with_argparser(fridge_parser())
+    def do_fridge(self, args):
+        """Control the smart fridge"""
+        pass
 
     @staticmethod
     def do_exit(args):
         """Exit the program"""
         sys.exit(0)
-
-
-"""
-Drone Camera : get/set coordinates, direction, zoom, set altitude
-Wall Camera : get/set coordinates, direction, zoom, set visibility
-Fridge : get/set temperature, get motd, set eco mode, get items, add/remove items
-"""
