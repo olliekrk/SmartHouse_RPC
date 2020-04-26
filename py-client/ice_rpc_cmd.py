@@ -22,6 +22,21 @@ def device_name_parser():
     return parser
 
 
+def grass_mower_parser():
+    parser = device_name_parser()
+    actions_group = parser.add_argument_group('actions')
+    exclusive_actions_group = actions_group.add_mutually_exclusive_group()
+    exclusive_actions_group.required = True
+    exclusive_actions_group.add_argument('-get_coords', action='store_true', help='Get coordinates of this device')
+    exclusive_actions_group.add_argument('-set_coords', action='store_true', help='Set coordinates of this device')
+    exclusive_actions_group.add_argument('-on', action='store_true', help='Turn the engine ON')
+    exclusive_actions_group.add_argument('-off', action='store_true', help='Turn the engine OFF')
+    arguments_group = parser.add_argument_group('arguments')
+    arguments_group.add_argument('-x', action='store', type=float, help='The X coordinate of the grass mower')
+    arguments_group.add_argument('-y', action='store', type=float, help='The Y coordinate of the grass mower')
+    return parser
+
+
 class RpcController:
     def __init__(self, communicator, server_cmd):
         self.communicator = communicator
@@ -71,7 +86,35 @@ class DeviceCmd(cmd2.Cmd):
         proxy = self.controller.access_object(args.name, DeviceCategory.home)
         print(proxy.getActiveDevices())
 
+    @cmd2.with_argparser(grass_mower_parser())
+    def do_grass_mower(self, args):
+        """Control the grass mower"""
+        proxy = self.controller.access_object(args.name, DeviceCategory.grass_mower)
+        if args.set_coords:
+            if args.x is not None and args.y is not None:
+                try:
+                    proxy.setCoordinates(Home.Garden.Coordinates(args.x, args.y))
+                except Home.InvalidCoordinates as e:
+                    print('InvalidCoordinates!: ', str(e))
+            else:
+                print('Coordinates were not provided')
+        elif args.get_coords:
+            print(proxy.getCoordinates())
+        elif args.on:
+            proxy.turnSwitch(True)
+        elif args.off:
+            proxy.turnSwitch(False)
+
+
+
     @staticmethod
     def do_exit(args):
         """Exit the program"""
         sys.exit(0)
+
+
+"""
+Drone Camera : get/set coordinates, direction, zoom, set altitude
+Wall Camera : get/set coordinates, direction, zoom, set visibility
+Fridge : get/set temperature, get motd, set eco mode, get items, add/remove items
+"""

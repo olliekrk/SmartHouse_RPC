@@ -11,26 +11,17 @@ public class HouseServantLocator implements ServantLocator {
 
     @Override
     public ServantLocator.LocateResult locate(com.zeroc.Ice.Current current) {
-        var homeStatusI = findHomeStatusI(current);
         if (current.id.category.equals("home")) {
-            return new LocateResult(homeStatusI, null);
-        } else {
-            homeStatusI.register(current.id);
+            return new LocateResult(findHomeStatusI(current), null);
         }
-        switch (current.id.category) {
-            case "wall_camera":
-                return new LocateResult(new WallCameraControllerI(), null);
-            case "drone_camera":
-                return new LocateResult(new DroneCameraControllerI(), null);
-            case "grass_mower":
-                return new LocateResult(new GrassMowerControllerI(), null);
-            case "fridge":
-                return new LocateResult(new FridgeControllerI(), null);
-            case "home":
-                return new LocateResult(new HomeStatusI(), null);
-            default:
-                return new ServantLocator.LocateResult();
+
+        var controller = createController(current.id.category);
+        if (controller != null) {
+            findHomeStatusI(current).register(current.id);
+            current.adapter.add(controller, current.id); // adds to ASM
         }
+        
+        return new LocateResult(controller, null);
     }
 
     @Override
@@ -45,4 +36,20 @@ public class HouseServantLocator implements ServantLocator {
         return (HomeStatusI) current.adapter.find(HomeStatusI.HOME_GLOBAL);
     }
 
+    private com.zeroc.Ice.Object createController(String category) {
+        switch (category) {
+            case "wall_camera":
+                return new WallCameraControllerI();
+            case "drone_camera":
+                return new DroneCameraControllerI();
+            case "grass_mower":
+                return new GrassMowerControllerI();
+            case "fridge":
+                return new FridgeControllerI();
+            case "home":
+                return new HomeStatusI();
+            default:
+                return null;
+        }
+    }
 }

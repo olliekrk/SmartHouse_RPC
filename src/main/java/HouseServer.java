@@ -23,7 +23,7 @@ public class HouseServer {
         var adapter = communicator.createObjectAdapter(HOUSE_ADAPTER_NAME);
 
         var locator = new HouseServantLocator();
-        var categories = new String[]{"", "wall_camera", "drone_camera", "grass_mower", "fridge", "home"};
+        var categories = new String[]{"wall_camera", "drone_camera", "grass_mower", "fridge", "home"};
 
         log.info("Assigning Servant Locator for categories: " + Arrays.toString(categories));
         Arrays.stream(categories).forEach(category -> adapter.addServantLocator(locator, category));

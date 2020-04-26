@@ -27,7 +27,7 @@ public class HomeStatusI implements HomeStatus {
     }
 
     public static String loggableIdentity(Identity id) {
-        return String.format("%s/%s", HOME_GLOBAL.category, HOME_GLOBAL.name);
+        return String.format("%s/%s", id.category, id.name);
     }
 
 }
