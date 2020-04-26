@@ -51,7 +51,7 @@ def wall_camera_parser():
     parser, exclusive_actions, arguments = camera_parser_base()
     exclusive_actions.add_argument('-is_visible', action='store_true', help='Check if camera is in visible mode')
     exclusive_actions.add_argument('-visible', action='store_true', help='Set the camera to be visible')
-    exclusive_actions.add_argument('-invisible', action='store_false', help='Hide this camera')
+    exclusive_actions.add_argument('-invisible', action='store_true', help='Hide this camera')
     return parser
 
 

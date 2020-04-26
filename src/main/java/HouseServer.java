@@ -2,6 +2,7 @@ import com.zeroc.Ice.Util;
 import locators.HouseServantLocator;
 import lombok.extern.slf4j.Slf4j;
 import servants.home.HomeStatusI;
+import misc.DeviceCategory;
 
 import java.util.Arrays;
 
@@ -23,7 +24,7 @@ public class HouseServer {
         var adapter = communicator.createObjectAdapter(HOUSE_ADAPTER_NAME);
 
         var locator = new HouseServantLocator();
-        var categories = new String[]{"wall_camera", "drone_camera", "grass_mower", "fridge", "home"};
+        var categories = DeviceCategory.names();
 
         log.info("Assigning Servant Locator for categories: " + Arrays.toString(categories));
         Arrays.stream(categories).forEach(category -> adapter.addServantLocator(locator, category));

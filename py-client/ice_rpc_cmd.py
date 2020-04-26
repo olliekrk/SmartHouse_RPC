@@ -9,6 +9,18 @@ import ice_parsers
 INTRO = 'Smart Home RPC remote controller\nv0.1 2020\n'
 PROMPT = 'Home> '
 
+TEMP_BY_NAME = {
+    Home.TemperatureUnit.Celsius.name: Home.TemperatureUnit.Celsius,
+    Home.TemperatureUnit.Fahrenheit.name: Home.TemperatureUnit.Fahrenheit,
+}
+
+DIR_BY_NAME = {
+    Home.Direction.North.name: Home.Direction.North,
+    Home.Direction.South.name: Home.Direction.South,
+    Home.Direction.West.name: Home.Direction.West,
+    Home.Direction.East.name: Home.Direction.East,
+}
+
 
 class DeviceCategory(Enum):
     home = 1
@@ -67,6 +79,10 @@ class DeviceCmd(cmd2.Cmd):
         proxy = self.controller.access_object(args.name, DeviceCategory.home)
         print(proxy.getActiveDevices())
 
+    def do_clean_cached_devices(self, args):
+        """Clears all cached references to previously accessed proxies"""
+        self.controller.proxies.clear()
+
     @cmd2.with_argparser(ice_parsers.grass_mower_parser())
     def do_grass_mower(self, args):
         """Control the grass mowers"""
@@ -96,8 +112,26 @@ class DeviceCmd(cmd2.Cmd):
             print(proxy.setVisibility(True))
         elif args.invisible:
             print(proxy.setVisibility(False))
-        else:
-            self.__dispatch_camera(args, proxy)
+        elif args.get_zoom:
+            print(proxy.getZoom())
+        elif args.zoom_in is not None:
+            proxy.zoomIn(args.zoom_in)
+        elif args.zoom_out is not None:
+            proxy.zoomOut(args.zoom_out)
+        elif args.get_direction:
+            print(proxy.getDirection())
+        elif args.set_direction is not None:
+            proxy.setDirection(DIR_BY_NAME[args.set_direction])
+        elif args.get_coords:
+            print(proxy.getCoordinates())
+        elif args.set_coords:
+            if args.x is not None and args.y is not None:
+                try:
+                    proxy.setCoordinates(Home.Garden.Coordinates(args.x, args.y))
+                except Home.HomeException as e:
+                    print('Unable to proceed!: ', str(e))
+            else:
+                print('Coordinates were not provided')
 
     @cmd2.with_argparser(ice_parsers.drone_camera_parser())
     def do_drone_camera(self, args):
@@ -110,8 +144,26 @@ class DeviceCmd(cmd2.Cmd):
                 proxy.setAltitude(args.set_altitude)
             except Home.HomeException as e:
                 print('Unable to proceed!: ', str(e))
-        else:
-            self.__dispatch_camera(args, proxy)
+        elif args.get_zoom:
+            print(proxy.getZoom())
+        elif args.zoom_in is not None:
+            proxy.zoomIn(args.zoom_in)
+        elif args.zoom_out is not None:
+            proxy.zoomOut(args.zoom_out)
+        elif args.get_direction:
+            print(proxy.getDirection())
+        elif args.set_direction is not None:
+            proxy.setDirection(DIR_BY_NAME[args.set_direction])
+        elif args.get_coords:
+            print(proxy.getCoordinates())
+        elif args.set_coords:
+            if args.x is not None and args.y is not None:
+                try:
+                    proxy.setCoordinates(Home.Garden.Coordinates(args.x, args.y))
+                except Home.HomeException as e:
+                    print('Unable to proceed!: ', str(e))
+            else:
+                print('Coordinates were not provided')
 
     @cmd2.with_argparser(ice_parsers.fridge_parser())
     def do_fridge(self, args):
@@ -120,7 +172,10 @@ class DeviceCmd(cmd2.Cmd):
         if args.message_of_the_day:
             print(proxy.getMessageOfTheDay())
         elif args.get_temperature:
-            print(proxy.getTemperature())
+            if args.temperature_unit is not None:
+                print(proxy.getTemperature(TEMP_BY_NAME[args.temperature_unit]))
+            else:
+                print("Temperature unit parameter must be provided")
         elif args.get_items:
             print(proxy.getItems())
         elif args.eco_on:
@@ -132,7 +187,7 @@ class DeviceCmd(cmd2.Cmd):
             unit = args.temperature_unit
             if value is not None and unit is not None:
                 try:
-                    proxy.setTemperature(Home.Kitchen.Temperature(Home.TemperatureUnit[unit], value))
+                    proxy.setTemperature(Home.Kitchen.Temperature(TEMP_BY_NAME[args.temperature_unit], value))
                 except Home.HomeException as e:
                     print("Unable to proceed!: ", str(e))
             else:
@@ -140,7 +195,7 @@ class DeviceCmd(cmd2.Cmd):
         elif args.put_items:
             if args.quantity is not None and args.item_name is not None:
                 try:
-                    proxy.putItems(Home.Kitchen.Item(args.item_name, args.quantity))
+                    proxy.putItems(Home.Kitchen.Item(args.item_name), args.quantity)
                 except Home.HomeException as e:
                     print("Unable to proceed!: ", str(e))
             else:
@@ -148,34 +203,11 @@ class DeviceCmd(cmd2.Cmd):
         elif args.remove_items:
             if args.quantity is not None and args.item_name is not None:
                 try:
-                    proxy.removeItems(Home.Kitchen.Item(args.item_name, args.quantity))
+                    proxy.removeItems(Home.Kitchen.Item(args.item_name), args.quantity)
                 except Home.HomeException as e:
                     print("Unable to proceed!: ", str(e))
             else:
                 print("Item name and quantity parameters must be provided")
-
-    @staticmethod
-    def __dispatch_camera(args, proxy):
-        if args.get_zoom:
-            print(proxy.getZoom())
-        elif args.zoom_in is not None:
-            proxy.zoomIn(args.zoom_in)
-        elif args.zoom_out is not None:
-            proxy.zoomOut(args.zoom_in)
-        elif args.get_direction:
-            print(proxy.getDirection())
-        elif args.set_direction is not None:
-            proxy.setDirection(Home.Direction[args.set_direction])
-        elif args.get_coords:
-            print(proxy.getCoordinates())
-        elif args.set_coords:
-            if args.x is not None and args.y is not None:
-                try:
-                    proxy.setCoordinates(Home.Garden.Coordinates(args.x, args.y))
-                except Home.HomeException as e:
-                    print('Unable to proceed!: ', str(e))
-            else:
-                print('Coordinates were not provided')
 
     @staticmethod
     def do_exit(_args):

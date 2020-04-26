@@ -22,7 +22,13 @@ public class FridgeControllerI implements FridgeController {
 
     @Override
     public Temperature getTemperature(TemperatureUnit unit, com.zeroc.Ice.Current current) {
-        return fridge.temperature;
+        if (fridge.temperature.unit == TemperatureUnit.Celsius && unit == TemperatureUnit.Fahrenheit) {
+            return new Temperature(TemperatureUnit.Fahrenheit, (fridge.temperature.value * 1.8) + 32); // xd
+        } else if (fridge.temperature.unit == TemperatureUnit.Fahrenheit && unit == TemperatureUnit.Celsius) {
+            return new Temperature(TemperatureUnit.Celsius, (fridge.temperature.value - 32) / 1.8);
+        } else {
+            return fridge.temperature;
+        }
     }
 
     @Override
