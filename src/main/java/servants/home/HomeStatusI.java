@@ -14,6 +14,7 @@ public class HomeStatusI implements HomeStatus {
 
     public HomeStatusI() {
         objectIdentities = new ConcurrentLinkedDeque<>();
+        objectIdentities.add(HOME_GLOBAL);
     }
 
     @Override
@@ -26,7 +27,7 @@ public class HomeStatusI implements HomeStatus {
     }
 
     public static String loggableIdentity(Identity id) {
-        return String.format("%s@%s", HOME_GLOBAL.category, HOME_GLOBAL.name);
+        return String.format("%s/%s", HOME_GLOBAL.category, HOME_GLOBAL.name);
     }
 
 }

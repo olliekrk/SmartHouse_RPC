@@ -18,7 +18,7 @@ class DeviceCategory(Enum):
 
 def device_name_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-n', '--name', required=True, action='store_true', help='Name of the device to access')
+    parser.add_argument('-n', '--name', required=True, action='store', help='Name of the device to access')
     return parser
 
 
@@ -35,7 +35,7 @@ class RpcController:
         return self.proxies[identity]
 
     def __get_object_access(self, identity, category):
-        print("Attempt to access object: " + identity)
+        print("Attempt to access new object: " + identity)
         proxy = self.communicator.stringToProxy(identity + ':' + self.server_cmd)
         obj = None
         if category == DeviceCategory.home:
@@ -69,7 +69,7 @@ class DeviceCmd(cmd2.Cmd):
     def do_list_devices(self, args):
         """List all currently available and instantiated devices."""
         proxy = self.controller.access_object(args.name, DeviceCategory.home)
-        print(proxy.getActiveDevices)
+        print(proxy.getActiveDevices())
 
     @staticmethod
     def do_exit(args):

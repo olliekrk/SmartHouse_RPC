@@ -11,7 +11,12 @@ public class HouseServantLocator implements ServantLocator {
 
     @Override
     public ServantLocator.LocateResult locate(com.zeroc.Ice.Current current) {
-        findHomeStatusI(current).register(current.id);
+        var homeStatusI = findHomeStatusI(current);
+        if (current.id.category.equals("home")) {
+            return new LocateResult(homeStatusI, null);
+        } else {
+            homeStatusI.register(current.id);
+        }
         switch (current.id.category) {
             case "wall_camera":
                 return new LocateResult(new WallCameraControllerI(), null);
